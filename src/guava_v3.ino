@@ -1,3 +1,10 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// Initialize LCD (I2C address 0x27, 20 columns, 4 rows)
+// If 0x27 doesn't work, try 0x3F
+LiquidCrystal_I2C lcd(0x27, 20, 4);
+
 // Pin assignments
 const int phPin    = A0;  // pH sensor
 const int mq135Pin = A1;  // MQ135 - Air quality (CO2, NH3, VOCs)
@@ -26,6 +33,19 @@ const int MQ135_RIPE_THRESHOLD = 300; // Adjust based on calibration
 void setup() {
   Serial.begin(9600);
 
+  // Initialize LCD
+  lcd.init();
+  lcd.backlight();
+  lcd.clear();
+  
+  // Display startup message
+  lcd.setCursor(0, 0);
+  lcd.print("Guava Ripeness");
+  lcd.setCursor(0, 1);
+  lcd.print("Classifier v3");
+  lcd.setCursor(0, 2);
+  lcd.print("Initializing...");
+
   pinMode(redLED, OUTPUT);
   pinMode(greenLED, OUTPUT);
   
@@ -41,6 +61,9 @@ void setup() {
   }
 
   Serial.println("Starting Sensors + LED System...");
+  
+  delay(2000);
+  lcd.clear();
 }
 
 void loop() {
@@ -80,18 +103,53 @@ void loop() {
   
   // LED Control based on ripeness score
   // Using PWM at 60% brightness to protect LEDs without resistors
+  String statusText = "";
   if (ripeScore >= 2) {
     // RIPE: Green LED ON, Red LED OFF
     analogWrite(greenLED, 150);  // 60% brightness (150/255)
     analogWrite(redLED, 0);
+    statusText = "RIPE";
     Serial.println("STATUS: RIPE ✓");
   } 
   else {
     // UNRIPE: Red LED ON, Green LED OFF
     analogWrite(redLED, 150);    // 60% brightness (150/255)
     analogWrite(greenLED, 0);
+    statusText = "UNRIPE";
     Serial.println("STATUS: UNRIPE");
   }
+  
+  // LCD Display (20x4)
+  lcd.clear();
+  
+  // Line 1: Status and Score
+  lcd.setCursor(0, 0);
+  lcd.print("Status: ");
+  lcd.print(statusText);
+  lcd.setCursor(14, 0);
+  lcd.print("S:");
+  lcd.print(ripeScore);
+  
+  // Line 2: pH Value
+  lcd.setCursor(0, 1);
+  lcd.print("pH: ");
+  lcd.print(pHValue, 2);
+  lcd.print(" (");
+  lcd.print(phRaw);
+  lcd.print(")");
+  
+  // Line 3: MQ135 (VOCs)
+  lcd.setCursor(0, 2);
+  lcd.print("MQ135: ");
+  lcd.print(mq135Raw);
+  lcd.print(" VOCs");
+  
+  // Line 4: MQ3 (Ethylene)
+  lcd.setCursor(0, 3);
+  lcd.print("MQ3: ");
+  lcd.print(mq3Raw);
+  lcd.print(" Ethylene");
+
 
   // Serial Print with Ripeness Score
   Serial.println("=====================================");
