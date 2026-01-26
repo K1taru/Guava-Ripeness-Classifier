@@ -16,7 +16,7 @@ LiquidCrystal_I2C lcd(0x27, 20, 4);
 const int mq3Pin = A0;      // MQ3 - Alcohol and volatile compounds (ethylene)
 
 // Digital Pins
-const int buttonPin = 2;    // D2 - Push button for scan trigger (with internal pull-up)
+const int buttonPin = 2;    // D2 - Button module signal pin (3-pin module: VCC, GND, SIG)
 const int redLED    = 5;    // D5 - Unripe indicator (PWM)
 const int greenLED  = 6;    // D6 - Ripe indicator (PWM)
 
@@ -110,7 +110,7 @@ void setup() {
   lcd.print("Initializing...");
 
   // Configure pins
-  pinMode(buttonPin, INPUT_PULLUP);  // Button with internal pull-up resistor
+  pinMode(buttonPin, INPUT);  // Button module (has built-in pull-up resistor)
   pinMode(redLED, OUTPUT);
   pinMode(greenLED, OUTPUT);
   

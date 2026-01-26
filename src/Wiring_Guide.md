@@ -13,7 +13,7 @@ This guide provides detailed instructions for wiring all components of the Guava
 | MQ3 Gas Sensor | 1 | Alcohol/Ethylene detection |
 | Red LED | 1 | Unripe indicator |
 | Green LED | 1 | Ripe indicator |
-| Push Button | 1 | Momentary tactile switch |
+| Button Module (3-pin) | 1 | Momentary button with VCC, GND, SIG pins |
 | Jumper Wires | ~15 | Male-to-Male and Male-to-Female |
 | Breadboard | 1 | For prototyping connections |
 
@@ -29,7 +29,7 @@ This guide provides detailed instructions for wiring all components of the Guava
 | **A1** | (Floating) | Random seed source |
 | **A4 (SDA)** | LCD I2C | I2C Data Line |
 | **A5 (SCL)** | LCD I2C | I2C Clock Line |
-| **D2** | Push Button | Scan trigger (INPUT_PULLUP) |
+| **D2** | Button Module (SIG) | Scan trigger signal |
 | **D5 (PWM)** | Red LED | Unripe indicator |
 | **D6 (PWM)** | Green LED | Ripe indicator |
 | **5V** | MQ3, LCD | Power supply |
@@ -135,26 +135,29 @@ Green LED         →    Arduino
 
 ---
 
-### 4. Push Button
+### 4. Button Module (3-Pin)
 
-The push button uses the Arduino's internal pull-up resistor, so no external resistor is needed.
+The button module has 3 pins: VCC, GND, and SIG (Signal). The module has a built-in pull-up resistor, so SIG outputs LOW when pressed and HIGH when released.
 
 ```
-Push Button       →    Arduino
+Button Module     →    Arduino
 ────────────────────────────────
-    Pin 1         →    D2
-    Pin 2         →    GND
+    VCC           →    5V
+    GND           →    GND
+    SIG (Signal)  →    D2
 ```
 
 **Wiring Diagram:**
 ```
-        D2 ─────┐
-                │
-            ┌───┴───┐
-            │  BTN  │
-            └───┬───┘
-                │
-        GND ────┘
+                    ┌─────────────┐
+                    │Button Module│
+                    │             │
+                    │ VCC GND SIG │
+                    └──┬───┬───┬──┘
+                       │   │   │
+                       │   │   └──────────→ D2
+                       │   └──────────────→ GND
+                       └──────────────────→ 5V
 ```
 
 **Button Operation:**
@@ -170,7 +173,7 @@ Push Button       →    Arduino
                                     ARDUINO UNO/NANO
                             ┌─────────────────────────────┐
                             │                             │
-    ┌───────────┐           │    D2 ◄─────────────────────┼──── Button Pin 1
+    ┌───────────┐           │    D2 ◄─────────────────────┼──── Button SIG
     │  LCD I2C  │           │                             │
     │           │           │    D5 (PWM) ────────────────┼──── Red LED (+)
     │  SDA ─────┼───────────┼──► A4                       │
@@ -182,16 +185,17 @@ Push Button       →    Arduino
     ┌───────────┐     │ │   │                             │
     │   MQ3     │     │ │   │                             │
     │           │     │ │   │    5V ──────────────────────┼──┬─ MQ3 VCC
-    │  AOUT ────┼─────┼─┼───┼──► A0                       │  └─ LCD VCC
-    │  VCC ─────┼─────┼─┼───┼─────────────────────────────┤
+    │  AOUT ────┼─────┼─┼───┼──► A0                       │  ├─ LCD VCC
+    │  VCC ─────┼─────┼─┼───┼─────────────────────────────┤  └─ Button VCC
     │  GND ─────┼─────┼─┼───┼─────────────────────────────┤
     └───────────┘     │ │   │                             │
                       │ │   │    GND ─────────────────────┼──┬─ MQ3 GND
-    ┌───────────┐     │ │   │                             │  ├─ LCD GND
-    │  Button   │     │ │   │                             │  ├─ Red LED (-)
-    │  Pin1 ────┼─────┼─┼───┼──► D2                       │  ├─ Green LED (-)
-    │  Pin2 ────┼─────┴─┼───┼─────────────────────────────┤  └─ Button Pin 2
-    └───────────┘       │   │                             │
+    ┌─────────────┐   │ │   │                             │  ├─ LCD GND
+    │Button Module│   │ │   │                             │  ├─ Red LED (-)
+    │  SIG ───────┼───┼─┼───┼──► D2                       │  ├─ Green LED (-)
+    │  VCC ───────┼───┼─┼───┼─────────────────────────────┤  └─ Button GND
+    │  GND ───────┼───┴─┼───┼─────────────────────────────┤
+    └─────────────┘     │   │                             │
                         │   └─────────────────────────────┘
                         │
                         └─── All connected to 5V rail
@@ -220,7 +224,7 @@ Before powering on, verify:
 - [ ] All GND connections share a common ground
 - [ ] LCD SDA → A4, SCL → A5
 - [ ] MQ3 AOUT → A0
-- [ ] Button connected to D2 and GND
+- [ ] Button module: VCC → 5V, GND → GND, SIG → D2
 - [ ] Red LED → D5, Green LED → D6
 - [ ] No short circuits between 5V and GND
 - [ ] All connections are secure
@@ -259,7 +263,7 @@ Before powering on, verify:
 | LCD blank | Wrong I2C address | Try changing `0x27` to `0x3F` in code |
 | LCD garbled | Loose connections | Check SDA/SCL wiring |
 | No sensor reading | MQ3 not connected | Verify A0 connection |
-| Button not working | Wrong pin or wiring | Check D2 and GND connections |
+| Button not working | Wrong pin or wiring | Check D2, 5V, and GND connections |
 | LEDs too dim | PWM value too low | Increase PWM value in code |
 | Inaccurate readings | Sensor not warmed up | Wait 5+ minutes after power on |
 
