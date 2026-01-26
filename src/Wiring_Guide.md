@@ -1,6 +1,6 @@
 # Guava Ripeness Classifier - Wiring Guide
 
-This guide provides detailed instructions for wiring all components of the Guava Ripeness Classifier v6.
+This guide provides detailed instructions for wiring all components of the Guava Ripeness Classifier v7.
 
 ---
 
@@ -11,8 +11,9 @@ This guide provides detailed instructions for wiring all components of the Guava
 | Arduino Uno/Nano | 1 | Microcontroller board |
 | LCD 20x4 I2C | 1 | Display module with I2C backpack |
 | MQ3 Gas Sensor | 1 | Alcohol/Ethylene detection |
-| Red LED | 1 | Unripe indicator |
-| Green LED | 1 | Ripe indicator |
+| Green LED | 1 | Unripe indicator |
+| Yellow LED | 1 | Ripe indicator |
+| Red LED | 1 | Overripe indicator |
 | Button Module (3-pin) | 1 | Momentary button with VCC, GND, SIG pins |
 | Jumper Wires | ~15 | Male-to-Male and Male-to-Female |
 | Breadboard | 1 | For prototyping connections |
@@ -30,8 +31,9 @@ This guide provides detailed instructions for wiring all components of the Guava
 | **A4 (SDA)** | LCD I2C | I2C Data Line |
 | **A5 (SCL)** | LCD I2C | I2C Clock Line |
 | **D2** | Button Module (SIG) | Scan trigger signal |
-| **D5 (PWM)** | Red LED | Unripe indicator |
-| **D6 (PWM)** | Green LED | Ripe indicator |
+| **D3 (PWM)** | Green LED | Unripe indicator |
+| **D5 (PWM)** | Yellow LED | Ripe indicator |
+| **D6 (PWM)** | Red LED | Overripe indicator |
 | **5V** | MQ3, LCD | Power supply |
 | **GND** | All components | Common ground |
 
@@ -102,15 +104,20 @@ MQ3 Sensor        →    Arduino
 
 ### 3. LED Indicators
 
-Both LEDs use PWM pins for brightness control. The code uses PWM to limit current, but adding a 220Ω resistor is recommended for LED longevity.
+All three LEDs use PWM pins for brightness control. The code uses PWM to limit current, but adding a 220Ω resistor is recommended for LED longevity.
 
 ```
-Red LED           →    Arduino
+Green LED         →    Arduino
+────────────────────────────────
+    Anode (+)     →    D3 (through 220Ω resistor - optional)
+    Cathode (-)   →    GND
+
+Yellow LED        →    Arduino
 ────────────────────────────────
     Anode (+)     →    D5 (through 220Ω resistor - optional)
     Cathode (-)   →    GND
 
-Green LED         →    Arduino
+Red LED           →    Arduino
 ────────────────────────────────
     Anode (+)     →    D6 (through 220Ω resistor - optional)
     Cathode (-)   →    GND
@@ -118,20 +125,23 @@ Green LED         →    Arduino
 
 **Wiring Diagram:**
 ```
-        D5 ───[220Ω]───┬──│>|──┬─── GND
-                       │  RED  │
+        D3 ───[220Ω]───┬──│>|──┬─── GND
+                       │ GREEN │
+                       │       │
+        D5 ───[220Ω]───┼──│>|──┼─── GND
+                       │YELLOW │
                        │       │
         D6 ───[220Ω]───┴──│>|──┴─── GND
-                          GREEN
+                           RED
 ```
 
 **LED Indicator Meanings:**
-| State | Red LED | Green LED | Meaning |
-|-------|---------|-----------|---------|
-| Ready | OFF | OFF | Waiting for button press |
-| Unripe | ON | OFF | Guava is unripe |
-| Ripe | OFF | ON | Guava is ripe |
-| Overripe | ON | ON | Guava is overripe |
+| State | Green LED | Yellow LED | Red LED | Meaning |
+|-------|-----------|------------|---------|----------|
+| Ready | OFF | OFF | OFF | Waiting for button press |
+| Unripe | ON | OFF | OFF | Guava is unripe |
+| Ripe | OFF | ON | OFF | Guava is ripe |
+| Overripe | OFF | OFF | ON | Guava is overripe |
 
 ---
 
@@ -175,12 +185,13 @@ Button Module     →    Arduino
                             │                             │
     ┌───────────┐           │    D2 ◄─────────────────────┼──── Button SIG
     │  LCD I2C  │           │                             │
-    │           │           │    D5 (PWM) ────────────────┼──── Red LED (+)
+    │           │           │    D3 (PWM) ────────────────┼──── Green LED (+)
     │  SDA ─────┼───────────┼──► A4                       │
-    │  SCL ─────┼───────────┼──► A5                       │     Green LED (+)
-    │  VCC ─────┼───────┐   │    D6 (PWM) ────────────────┼────────┘
+    │  SCL ─────┼───────────┼──► A5                       │
+    │  VCC ─────┼───────┐   │    D5 (PWM) ────────────────┼──── Yellow LED (+)
     │  GND ─────┼─────┐ │   │                             │
-    └───────────┘     │ │   │                             │
+    └───────────┘     │ │   │    D6 (PWM) ────────────────┼──── Red LED (+)
+                      │ │   │                             │
                       │ │   │    A0 ◄─────────────────────┼──── MQ3 AOUT
     ┌───────────┐     │ │   │                             │
     │   MQ3     │     │ │   │                             │
@@ -191,10 +202,10 @@ Button Module     →    Arduino
     └───────────┘     │ │   │                             │
                       │ │   │    GND ─────────────────────┼──┬─ MQ3 GND
     ┌─────────────┐   │ │   │                             │  ├─ LCD GND
-    │Button Module│   │ │   │                             │  ├─ Red LED (-)
-    │  SIG ───────┼───┼─┼───┼──► D2                       │  ├─ Green LED (-)
-    │  VCC ───────┼───┼─┼───┼─────────────────────────────┤  └─ Button GND
-    │  GND ───────┼───┴─┼───┼─────────────────────────────┤
+    │Button Module│   │ │   │                             │  ├─ Green LED (-)
+    │  SIG ───────┼───┼─┼───┼──► D2                       │  ├─ Yellow LED (-)
+    │  VCC ───────┼───┼─┼───┼─────────────────────────────┤  ├─ Red LED (-)
+    │  GND ───────┼───┴─┼───┼─────────────────────────────┤  └─ Button GND
     └─────────────┘     │   │                             │
                         │   └─────────────────────────────┘
                         │
@@ -210,8 +221,8 @@ Button Module     →    Arduino
 | Arduino Uno | ~50 mA |
 | LCD 20x4 I2C | ~20 mA (with backlight) |
 | MQ3 Sensor | ~150 mA (during heating) |
-| LEDs (each) | ~10-15 mA (at 60% PWM) |
-| **Total** | **~250 mA** |
+| LEDs (3x total) | ~10-15 mA each (at 60% PWM) |
+| **Total** | **~260 mA** |
 
 > **Recommendation:** Use a quality USB power supply or 9V adapter with at least 500mA capacity.
 
@@ -225,7 +236,7 @@ Before powering on, verify:
 - [ ] LCD SDA → A4, SCL → A5
 - [ ] MQ3 AOUT → A0
 - [ ] Button module: VCC → 5V, GND → GND, SIG → D2
-- [ ] Red LED → D5, Green LED → D6
+- [ ] Green LED → D3, Yellow LED → D5, Red LED → D6
 - [ ] No short circuits between 5V and GND
 - [ ] All connections are secure
 
@@ -234,14 +245,14 @@ Before powering on, verify:
 ## 🚀 First-Time Setup
 
 1. **Upload the Code**
-   - Open `guava_v6.ino` in Arduino IDE
+   - Open `guava_v7.ino` in Arduino IDE
    - Select the correct board (Arduino Uno/Nano)
    - Select the correct COM port
    - Click Upload
 
 2. **Initial Power On**
    - The LCD should display "Guava Ripeness Classifier v6"
-   - Both LEDs will blink twice during initialization
+   - All three LEDs (Green, Yellow, Red) will blink twice during initialization
    - LCD will show "Place Guava Near, Press Button Scan"
 
 3. **Sensor Warm-up**
@@ -279,4 +290,4 @@ Before powering on, verify:
 ---
 
 *Last Updated: January 2026*
-*Version: 6.0*
+*Version: 7.0*
